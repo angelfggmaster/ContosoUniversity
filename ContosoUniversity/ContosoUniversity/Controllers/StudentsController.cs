@@ -48,15 +48,21 @@
         // más información vea https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "StudentID,LastName,FirstMidName,EnrollmentDate")] Student student)
+        public async Task<ActionResult> Create(Student student)
         {
-            if (ModelState.IsValid)
+            try
             {
-                db.Students.Add(student);
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                if (ModelState.IsValid)
+                {
+                    db.Students.Add(student);
+                    await db.SaveChangesAsync();
+                    return RedirectToAction("Index");
+                }
             }
-
+            catch (Exception)
+            {
+                ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persist see your system administrator.");
+            }
             return View(student);
         }
 
@@ -80,23 +86,35 @@
         // más información vea https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "StudentID,LastName,FirstMidName,EnrollmentDate")] Student student)
+        public async Task<ActionResult> Edit(Student student)
         {
-            if (ModelState.IsValid)
+            try
             {
-                db.Entry(student).State = EntityState.Modified;
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                if (ModelState.IsValid)
+                {
+                    db.Entry(student).State = EntityState.Modified;
+                    await db.SaveChangesAsync();
+                    return RedirectToAction("Index");
+                }
             }
+            catch (Exception)
+            {
+                ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persist see your system administrator.");
+            }
+
             return View(student);
         }
 
         // GET: Students/Delete/5
-        public async Task<ActionResult> Delete(int? id)
+        public async Task<ActionResult> Delete(int? id, bool? saveChangesError = false)
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            if (saveChangesError.GetValueOrDefault())
+            {
+                ViewBag.ErrorMessage = "Delete failed. Try again, an if the problem persist see your system administrator.";
             }
             Student student = await db.Students.FindAsync(id);
             if (student == null)
@@ -107,13 +125,21 @@
         }
 
         // POST: Students/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            Student student = await db.Students.FindAsync(id);
-            db.Students.Remove(student);
-            await db.SaveChangesAsync();
+            try
+            {
+                Student studentToDelete = new Student() { StudentID = id };
+                db.Entry(studentToDelete).State = EntityState.Deleted;
+                await db.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                return RedirectToAction("Delete", new { id = id, saveChangesError = true });
+            }
+
             return RedirectToAction("Index");
         }
 
