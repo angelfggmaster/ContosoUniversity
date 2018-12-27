@@ -2,9 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Web;
     using System.Data.Entity;
+
     using Models;
 
     public class SchoolInitializer : DropCreateDatabaseIfModelChanges<SchoolContext>
@@ -63,7 +62,7 @@
                 }
             };
             students.ForEach(s => context.Students.Add(s));
-            context.SaveChangesAsync();
+            context.SaveChanges();
 
             var courses = new List<Course>
             {
@@ -111,7 +110,7 @@
                 }
             };
             courses.ForEach(c => context.Courses.Add(c));
-            context.SaveChangesAsync();
+            context.SaveChanges();
 
             var enrollments = new List<Enrollment>
             {
@@ -186,7 +185,7 @@
                 },
             };
             enrollments.ForEach(e => context.Enrollments.Add(e));
-            context.SaveChangesAsync();
+            context.SaveChanges();
         }
     }
 }
