@@ -1,25 +1,73 @@
 ﻿namespace ContosoUniversity.Controllers
 {
+    using DAL;
+    using Models;
+    using PagedList;
     using System;
-    using System.Collections.Generic;
     using System.Data;
     using System.Data.Entity;
     using System.Linq;
-    using System.Threading.Tasks;
     using System.Net;
-    using System.Web;
+    using System.Threading.Tasks;
     using System.Web.Mvc;
-    using DAL;
-    using Models;
 
     public class StudentsController : Controller
     {
         private SchoolContext db = new SchoolContext();
 
         // GET: Students
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult> Index(string sortOrder, string currentFilter, string searchString, int? page)
         {
-            return View(await db.Students.ToListAsync());
+            ViewBag.CurrentSort = sortOrder;
+            ViewBag.NameSortParam = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewBag.DateSortParam = sortOrder == "Date" ? "date_desc" : "Date";
+
+            if (searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+            ViewBag.CurrentFilter = searchString;
+
+            var students = from s in db.Students
+                           select s;
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(s => s.LastName.ToUpper().Contains(searchString.ToUpper()) ||
+                    s.FirstMidName.ToUpper().Contains(searchString.ToUpper()));
+            }
+
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    {
+                        students = students.OrderByDescending(s => s.LastName);
+                        break;
+                    }
+                case "Date":
+                    {
+                        students = students.OrderBy(s => s.EnrollmentDate);
+                        break;
+                    }
+                case "date_desc":
+                    {
+                        students = students.OrderByDescending(s => s.EnrollmentDate);
+                        break;
+                    }
+                default:
+                    {
+                        students = students.OrderBy(s => s.LastName);
+                        break;
+                    }
+
+            }
+            int pageSize = 3;
+            int pageNumber = (page ?? 1);
+            return View(students.ToPagedList(pageNumber, pageSize));
         }
 
         // GET: Students/Details/5
